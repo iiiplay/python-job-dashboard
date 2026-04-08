@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python 工程師市場分析儀表板</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root{--p:#4f46e5;--pl:#818cf8;--s:#06b6d4;--a:#f59e0b;--g:#10b981;--r:#ef4444;--bg:#0f172a;--bg2:#1e293b;--bg3:#334155;--tx:#e2e8f0;--tm:#94a3b8;--bd:#334155}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6}
+.hero{background:linear-gradient(135deg,#1e1b4b 0%,#0f172a 40%,#0c4a6e 100%);padding:48px 32px 40px;text-align:center;border-bottom:1px solid var(--bd);position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 60% 40%,rgba(99,102,241,.15) 0%,transparent 70%)}
+.hero h1{font-size:2.4rem;font-weight:800;letter-spacing:-.5px;position:relative}
+.hero h1 span{color:var(--pl)}
+.hero p{color:var(--tm);margin-top:10px;font-size:1.05rem;position:relative}
+.badge-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px;position:relative}
+.badge{background:rgba(79,70,229,.2);border:1px solid rgba(99,102,241,.4);padding:4px 14px;border-radius:99px;font-size:.82rem;color:var(--pl)}
+.badge.g{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6ee7b7}
+.badge.y{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4);color:#fcd34d}
+.badge.c{background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.4);color:#67e8f9}
+nav{background:var(--bg2);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:100}
+nav ul{display:flex;gap:0;list-style:none;overflow-x:auto;padding:0 20px}
+nav li a{display:block;padding:14px 18px;color:var(--tm);text-decoration:none;font-size:.9rem;white-space:nowrap;transition:color .2s;border-bottom:2px solid transparent}
+nav li a:hover,nav li a.active{color:var(--pl);border-bottom-color:var(--pl)}
+.wrap{max-width:1400px;margin:0 auto;padding:32px 24px}
+section{margin-bottom:60px;scroll-margin-top:60px}
+.stitle{font-size:1.5rem;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.sdesc{color:var(--tm);margin-bottom:24px;font-size:.92rem}
+.div{height:1px;background:var(--bd);margin-bottom:24px}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:16px;margin-bottom:32px}
+.kcard{background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:20px;text-align:center;transition:transform .2s,box-shadow .2s}
+.kcard:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.kcard .num{font-size:2.2rem;font-weight:800;line-height:1}
+.kcard .lbl{font-size:.82rem;color:var(--tm);margin-top:6px}
+.kcard.b .num{color:var(--pl)}
+.kcard.c .num{color:var(--s)}
+.kcard.y .num{color:var(--a)}
+.kcard.g .num{color:var(--g)}
+.kcard.r .num{color:#f87171}
+.cgrid{display:grid;gap:20px}
+.cgrid.c2{grid-template-columns:repeat(auto-fit,minmax(400px,1fr))}
+.cgrid.c3{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.cc{background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:24px}
+.cc h3{font-size:1rem;font-weight:600;margin-bottom:16px;color:var(--tx)}
+.cc .sub{font-size:.78rem;color:var(--tm);margin-top:-10px;margin-bottom:14px}
+.bb{background:var(--bg3);border-radius:99px;height:6px;overflow:hidden;margin-top:4px}
+.bf{height:100%;border-radius:99px}
+.ptable{width:100%;border-collapse:collapse;font-size:.88rem}
+.ptable th{background:var(--bg3);padding:10px 14px;text-align:left;font-weight:600;color:var(--tm);font-size:.78rem;text-transform:uppercase;letter-spacing:.5px}
+.ptable td{padding:9px 14px;border-bottom:1px solid var(--bd)}
+.ptable tr:hover td{background:rgba(255,255,255,.03)}
+.ptable tr:last-child td{border-bottom:none}
+.rb{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;font-size:.75rem;font-weight:700}
+.r1{background:rgba(245,158,11,.2);color:#fcd34d}.r2{background:rgba(156,163,175,.2);color:#d1d5db}.r3{background:rgba(180,83,9,.2);color:#fb923c}.rn{background:rgba(100,116,139,.15);color:var(--tm)}
+.ctag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.72rem;font-weight:600}
+.cv{background:rgba(79,70,229,.2);color:#a5b4fc}
+.cd{background:rgba(6,182,212,.2);color:#67e8f9}
+.cm{background:rgba(168,85,247,.2);color:#d8b4fe}
+.ca{background:rgba(16,185,129,.2);color:#6ee7b7}
+.cda{background:rgba(245,158,11,.2);color:#fcd34d}
+.cde{background:rgba(239,68,68,.2);color:#fca5a5}
+.cw{background:rgba(236,72,153,.2);color:#f9a8d4}
+.cc2{background:rgba(20,184,166,.2);color:#5eead4}
+.ct{background:rgba(107,114,128,.2);color:#d1d5db}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.pc{background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:22px;transition:transform .2s,box-shadow .2s}
+.pc:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,.35)}
+.pc .pi{font-size:1.8rem;margin-bottom:12px}
+.pc h4{font-size:1rem;font-weight:700;margin-bottom:8px}
+.pc p{font-size:.84rem;color:var(--tm);margin-bottom:12px;line-height:1.5}
+.pc .tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);color:var(--pl);font-size:.72rem;padding:2px 8px;border-radius:6px}
+.pc .sh{margin-top:12px;padding-top:10px;border-top:1px solid var(--bd);font-size:.78rem;color:var(--g)}
+.ib{background:linear-gradient(135deg,rgba(79,70,229,.1),rgba(6,182,212,.08));border:1px solid rgba(79,70,229,.3);border-radius:12px;padding:20px 24px;margin-top:24px}
+.ib h4{font-size:.95rem;font-weight:700;color:var(--pl);margin-bottom:10px}
+.ib ul{padding-left:18px}
+.ib li{font-size:.86rem;color:var(--tm);margin-bottom:6px}
+.ib li strong{color:var(--tx)}
+.igrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.ic{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px}
+.ic .in{font-size:1.5rem;font-weight:800;color:var(--pl);min-width:48px;text-align:center}
+.ic .ii{flex:1}
+.ic .inm{font-size:.9rem;font-weight:600}
+.so{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+.sb{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:16px;text-align:center}
+.sb .sl{font-size:.75rem;color:var(--tm);margin-bottom:6px}
+.sb .sv{font-size:1.4rem;font-weight:700;color:var(--a)}
+footer{text-align:center;padding:32px;color:var(--tm);font-size:.82rem;border-top:1px solid var(--bd)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px}
+@media(max-width:600px){.hero h1{font-size:1.6rem}.cgrid.c2,.cgrid.c3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="hero">
+  <h1>🐍 <span>Python 工程師</span> 市場分析儀表板</h1>
+  <p>基於 104 人力銀行 1,600+ 筆職缺資料的全方位市場洞察</p>
+  <div class="badge-row">
+    <span class="badge">📊 1,600+ 職缺樣本</span>
+    <span class="badge c">🗺️ 全台北中南分析</span>
+    <span class="badge y">💰 薪資區間解析</span>
+    <span class="badge g">🛠️ 73 項技能統計</span>
+  </div>
+</div>
+<nav><ul>
+  <li><a href="#overview" class="active">📈 總覽</a></li>
+  <li><a href="#region">🗺️ 地區分佈</a></li>
+  <li><a href="#salary">💰 薪資分析</a></li>
+  <li><a href="#skills">🛠️ 技能需求</a></li>
+  <li><a href="#industry">🏭 產業分佈</a></li>
+  <li><a href="#portfolio">📁 作品方向</a></li>
+  <li><a href="#roadmap">🎯 學習路線</a></li>
+</ul></nav>
+<div class="wrap">
+
+<!-- Overview -->
+<section id="overview">
+  <div class="stitle"><span>📈</span>市場總覽</div>
+  <p class="sdesc">Python 工程師在台灣就業市場的整體需求概況</p>
+  <div class="div"></div>
+  <div class="kgrid">
+    <div class="kcard b"><div class="num">1,600+</div><div class="lbl">Python 相關職缺總數</div></div>
+    <div class="kcard c"><div class="num">1,117</div><div class="lbl">北部職缺（佔 69.8%）</div></div>
+    <div class="kcard g"><div class="num">390</div><div class="lbl">南部職缺（佔 24.4%）</div></div>
+    <div class="kcard y"><div class="num">4~5萬</div><div class="lbl">最集中薪資區間</div></div>
+    <div class="kcard r"><div class="num">73</div><div class="lbl">需求技能種類</div></div>
+    <div class="kcard b"><div class="num">24.4%</div><div class="lbl">最高需求技能：Linux</div></div>
+  </div>
+  <div class="cgrid c2">
+    <div class="cc"><h3>🗺️ 北中南職缺分佈</h3><p class="sub">Python 工程師職缺的地理集中度</p><div style="height:260px"><canvas id="c_region"></canvas></div></div>
+    <div class="cc"><h3>💰 薪資整體分佈</h3><p class="sub">月薪（新台幣）區間人數分佈</p><div style="height:260px"><canvas id="c_sal_ov"></canvas></div></div>
+  </div>
+</section>
+
+<!-- Region -->
+<section id="region">
+  <div class="stitle"><span>🗺️</span>地區需求分析</div>
+  <p class="sdesc">不同地區的 Python 職缺競爭態勢</p>
+  <div class="div"></div>
+  <div class="cc">
+    <h3>📊 各地區職缺比例</h3>
+    <div style="display:flex;align-items:center;gap:40px;flex-wrap:wrap">
+      <div style="width:260px;height:260px;flex-shrink:0"><canvas id="c_reg_donut"></canvas></div>
+      <div style="flex:1;min-width:240px">
+        <div style="font-size:.9rem;color:var(--tm);margin-bottom:12px">各地區職缺數量與佔比</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div><div style="display:flex;justify-content:space-between;font-size:.88rem;margin-bottom:4px"><span>🔵 北部（台北/新北/基隆/桃園/新竹）</span><span style="color:var(--pl);font-weight:700">1,117（69.8%）</span></div><div class="bb"><div class="bf" style="width:69.8%;background:var(--pl)"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:.88rem;margin-bottom:4px"><span>🟠 南部（台南/高雄/屏東等）</span><span style="color:var(--a);font-weight:700">390（24.4%）</span></div><div class="bb"><div class="bf" style="width:24.4%;background:var(--a)"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:.88rem;margin-bottom:4px"><span>🟢 中部（台中/彰化/南投等）</span><span style="color:var(--g);font-weight:700">93（5.8%）</span></div><div class="bb"><div class="bf" style="width:5.8%;background:var(--g)"></div></div></div>
+        </div>
+        <div class="ib" style="margin-top:16px">
+          <h4>💡 地區洞察</h4>
+          <ul>
+            <li><strong>北部高度集中</strong>：近 7 成職缺在北部，台北市為核心</li>
+            <li><strong>南部具規模</strong>：高雄科技園區帶動南部 24.4% 需求</li>
+            <li><strong>中部機會少但競爭低</strong>：僅 5.8%，適合在地求職者</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Salary -->
+<section id="salary">
+  <div class="stitle"><span>💰</span>薪資深度分析</div>
+  <p class="sdesc">Python 工程師的薪資水平與技能的關聯性</p>
+  <div class="div"></div>
+  <div class="so">
+    <div class="sb"><div class="sl">最低起薪（有揭露）</div><div class="sv">&lt;3萬</div></div>
+    <div class="sb"><div class="sl">最集中薪資區</div><div class="sv">3~5萬</div></div>
+    <div class="sb"><div class="sl">中高階門檻</div><div class="sv">6萬+</div></div>
+    <div class="sb"><div class="sl">資深/主管級</div><div class="sv">10萬+</div></div>
+    <div class="sb"><div class="sl">最高紀錄月薪</div><div class="sv">33萬+</div></div>
+  </div>
+  <div class="cgrid c2">
+    <div class="cc"><h3>📊 月薪分佈長條圖</h3><p class="sub">有揭露薪資職缺的月薪人數統計</p><div style="height:300px"><canvas id="c_sal_bar"></canvas></div></div>
+    <div class="cc"><h3>🛠️ 技能類別 vs 平均薪資</h3><p class="sub">不同 Python 技能類別對應的平均月薪</p><div style="height:300px"><canvas id="c_sal_skill"></canvas></div></div>
+  </div>
+  <div class="ib">
+    <h4>💡 薪資洞察</h4>
+    <ul>
+      <li><strong>資料工程</strong>（ETL、Pipeline、Spark、Kafka）技能平均月薪最高 ~7.2萬</li>
+      <li><strong>API / 雲端</strong>（AWS, GCP, Azure, Kubernetes）平均薪資 ~6.7萬，高薪必備</li>
+      <li><strong>機器學習 / AI</strong>（LLM, PyTorch, RAG）平均薪資 ~6.5萬，AI 時代持續增長</li>
+      <li><strong>3~5萬區間</strong>職缺最多，是初/中階工程師的主要市場</li>
+      <li>有 <strong>15 筆職缺月薪超過 10萬</strong>，集中於資深/主管/AI 專業職位</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Skills -->
+<section id="skills">
+  <div class="stitle"><span>🛠️</span>技能需求分析</div>
+  <p class="sdesc">雇主最重視的 Python 生態系技能，幫助你優先學習</p>
+  <div class="div"></div>
+  <div class="cgrid c2" style="margin-bottom:24px">
+    <div class="cc"><h3>🏆 Top 15 Python 配套技能需求</h3><p class="sub">在職缺描述中出現的技能頻率（出現職缺數）</p><div style="height:380px"><canvas id="c_top_skills"></canvas></div></div>
+    <div class="cc"><h3>🗂️ 技能類別需求雷達圖</h3><p class="sub">各技能類別在整體職缺中的需求分佈</p><div style="height:380px"><canvas id="c_radar"></canvas></div></div>
+  </div>
+  <div class="cc" style="margin-bottom:24px">
+    <h3>📋 完整 Python 技能需求排行（Top 40）</h3>
+    <p class="sub">按出現職缺數排列，含技能類別與需求比例</p>
+    <div style="overflow-x:auto">
+      <table class="ptable">
+        <thead><tr><th>排名</th><th>技能</th><th>類別</th><th>出現職缺數</th><th>需求比例</th><th>熱度</th></tr></thead>
+        <tbody id="skillTbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="cgrid c2">
+    <div class="cc"><h3>🔝 Python 以外最搭配的技術棧（Top 20）</h3><p class="sub">市場上 Python 職缺中同時要求的其他技術</p><div style="height:360px"><canvas id="c_cosk"></canvas></div></div>
+    <div class="cc"><h3>🗂️ 技能類別需求圓環圖</h3><p class="sub">九大技能類別的職缺出現頻率佔比</p><div style="height:360px"><canvas id="c_cat"></canvas></div></div>
+  </div>
+</section>
+
+<!-- Industry -->
+<section id="industry">
+  <div class="stitle"><span>🏭</span>產業需求分析</div>
+  <p class="sdesc">哪些產業正在大量招募 Python 工程師</p>
+  <div class="div"></div>
+  <div class="cgrid c2">
+    <div class="cc"><h3>🏭 Top 15 招募產業（職缺數）</h3><div style="height:400px"><canvas id="c_ind"></canvas></div></div>
+    <div class="cc"><h3>📊 產業類型分佈比例</h3><div style="height:400px"><canvas id="c_ind_donut"></canvas></div></div>
+  </div>
+  <div class="igrid" style="margin-top:20px">
+    <div class="ic"><div class="in">272</div><div class="ii"><div class="inm">電腦軟體服務業 🥇</div><div class="bb"><div class="bf" style="width:100%;background:var(--pl)"></div></div></div></div>
+    <div class="ic"><div class="in">159</div><div class="ii"><div class="inm">電腦及其週邊設備製造業</div><div class="bb"><div class="bf" style="width:58%;background:var(--s)"></div></div></div></div>
+    <div class="ic"><div class="in">105</div><div class="ii"><div class="inm">電腦系統整合服務業</div><div class="bb"><div class="bf" style="width:39%;background:var(--a)"></div></div></div></div>
+    <div class="ic"><div class="in">86</div><div class="ii"><div class="inm">其它軟體及網路相關業</div><div class="bb"><div class="bf" style="width:32%;background:var(--g)"></div></div></div></div>
+    <div class="ic"><div class="in">81</div><div class="ii"><div class="inm">網際網路相關業</div><div class="bb"><div class="bf" style="width:30%;background:#a78bfa"></div></div></div></div>
+    <div class="ic"><div class="in">78</div><div class="ii"><div class="inm">IC 設計相關業</div><div class="bb"><div class="bf" style="width:29%;background:#f9a8d4"></div></div></div></div>
+    <div class="ic"><div class="in">49</div><div class="ii"><div class="inm">銀行業（金融科技）</div><div class="bb"><div class="bf" style="width:18%;background:#fca5a5"></div></div></div></div>
+    <div class="ic"><div class="in">43</div><div class="ii"><div class="inm">消費性電子產品製造業</div><div class="bb"><div class="bf" style="width:16%;background:#5eead4"></div></div></div></div>
+  </div>
+  <div class="ib">
+    <h4>💡 產業洞察</h4>
+    <ul>
+      <li><strong>軟體服務業</strong>是最大雇主，佔比超過 17%，涵蓋 SaaS、企業軟體、雲端服務</li>
+      <li><strong>半導體 / IC / 電子製造</strong>對 Python（自動化、測試腳本）需求快速增加</li>
+      <li><strong>金融業（銀行、證券）</strong>積極導入 AI / 量化分析，Python 需求成長明顯</li>
+      <li><strong>網際網路業</strong>需要全端 Python 能力，後端 API + 資料分析雙修更競爭</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Portfolio -->
+<section id="portfolio">
+  <div class="stitle"><span>📁</span>作品集方向建議</div>
+  <p class="sdesc">根據市場需求，最具求職競爭力的作品方向與技術組合</p>
+  <div class="div"></div>
+  <div class="pgrid">
+    <div class="pc"><div class="pi">🤖</div><h4>AI / LLM 應用系統</h4><p>建立 LLM 驅動應用：RAG 知識庫問答、AI 客服機器人、多模態影像辨識工具，整合 API 對外提供服務。</p><div class="tags"><span class="tag">LLM</span><span class="tag">RAG</span><span class="tag">LangChain</span><span class="tag">PyTorch</span><span class="tag">FastAPI</span><span class="tag">OpenCV</span></div><div class="sh">💰 對應薪資：5~12萬（AI 工程師）</div></div>
+    <div class="pc"><div class="pi">📊</div><h4>資料工程 Pipeline</h4><p>設計端對端資料管道：資料擷取、清洗、ETL 轉換到視覺化儀表板，並部署於雲端自動排程執行。</p><div class="tags"><span class="tag">ETL</span><span class="tag">Airflow</span><span class="tag">Spark</span><span class="tag">PostgreSQL</span><span class="tag">AWS/GCP</span><span class="tag">Pandas</span></div><div class="sh">💰 對應薪資：6~10萬（資料工程師）</div></div>
+    <div class="pc"><div class="pi">🌐</div><h4>後端 API 服務</h4><p>用 FastAPI 或 Django 打造高效能 RESTful API，結合關聯式資料庫、Redis 快取，Docker 容器化部署。</p><div class="tags"><span class="tag">FastAPI/Django</span><span class="tag">RESTful</span><span class="tag">MySQL</span><span class="tag">Docker</span><span class="tag">CI/CD</span><span class="tag">AWS</span></div><div class="sh">💰 對應薪資：4~8萬（後端工程師）</div></div>
+    <div class="pc"><div class="pi">📈</div><h4>數據分析與視覺化</h4><p>選取公開資料集（股市/政府/社群）做深度 EDA 分析，用 Tableau / Power BI 建立互動式商業報表。</p><div class="tags"><span class="tag">Pandas</span><span class="tag">Numpy</span><span class="tag">Tableau</span><span class="tag">Power BI</span><span class="tag">Matplotlib</span><span class="tag">Excel</span></div><div class="sh">💰 對應薪資：4~7萬（數據分析師）</div></div>
+    <div class="pc"><div class="pi">🔄</div><h4>自動化爬蟲系統</h4><p>爬取電商/新聞/政府資料，搭配排程自動更新，存入資料庫並提供 API 查詢，加入反爬機制處理。</p><div class="tags"><span class="tag">Selenium</span><span class="tag">Playwright</span><span class="tag">Requests</span><span class="tag">RPA</span><span class="tag">MySQL</span><span class="tag">Scheduler</span></div><div class="sh">💰 對應薪資：3.5~6萬（自動化工程師）</div></div>
+    <div class="pc"><div class="pi">⚙️</div><h4>DevOps / 系統自動化</h4><p>建立完整 CI/CD Pipeline，包含自動測試（Pytest）、Docker 容器化、Kubernetes 部署與監控告警系統。</p><div class="tags"><span class="tag">Linux</span><span class="tag">Docker</span><span class="tag">Kubernetes</span><span class="tag">CI/CD</span><span class="tag">Git</span><span class="tag">Pytest</span></div><div class="sh">💰 對應薪資：5~10萬（DevOps/SRE）</div></div>
+    <div class="pc"><div class="pi">🧬</div><h4>機器學習模型專案</h4><p>完整 ML 流程：EDA → 特徵工程 → 模型訓練 → 評估 → API 部署，搭配 MLflow 實驗追蹤與模型版本管理。</p><div class="tags"><span class="tag">Scikit-learn</span><span class="tag">PyTorch</span><span class="tag">Tensorflow</span><span class="tag">XGBoost</span><span class="tag">FastAPI</span></div><div class="sh">💰 對應薪資：5~10萬（ML 工程師）</div></div>
+    <div class="pc"><div class="pi">🏦</div><h4>金融科技應用（FinTech）</h4><p>量化交易回測系統、財務報告自動化分析、風控模型建置，特別適合銀行/證券業求職目標。</p><div class="tags"><span class="tag">Pandas</span><span class="tag">Numpy</span><span class="tag">MS SQL</span><span class="tag">Power BI</span><span class="tag">Excel/VBA</span><span class="tag">Git</span></div><div class="sh">💰 對應薪資：5~15萬（量化分析師）</div></div>
+  </div>
+  <div class="ib">
+    <h4>💡 作品集策略建議</h4>
+    <ul>
+      <li><strong>必備基本功</strong>：「資料庫操作 + API 開發 + Git 版本控制」是市場最基礎要求</li>
+      <li><strong>加分亮點</strong>：Docker 部署、CI/CD 流程、雲端部署（AWS/GCP），可往 6萬+ 談</li>
+      <li><strong>AI 趨勢</strong>：2024-2025 LLM/RAG 應用需求暴增，有實作 LLM 整合的作品大幅提高競爭力</li>
+      <li><strong>README 品質</strong>：GitHub 要有清楚的 README、架構圖、Demo 影片和技術選型說明</li>
+      <li><strong>深度優於廣度</strong>：準備 3~5 個深度作品，比 10 個淺薄作品更有說服力</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Roadmap -->
+<section id="roadmap">
+  <div class="stitle"><span>🎯</span>學習路線規劃</div>
+  <p class="sdesc">根據市場數據制定最有效率的技能學習優先順序</p>
+  <div class="div"></div>
+  <div class="cgrid c2">
+    <div class="cc">
+      <h3>📊 技能學習優先矩陣</h3>
+      <p class="sub">泡泡大小代表重要性，X 軸需求頻率，Y 軸薪資影響力</p>
+      <div style="height:360px"><canvas id="c_bubble"></canvas></div>
+    </div>
+    <div class="cc">
+      <h3>🎯 職涯路線技能需求</h3>
+      <p class="sub">不同職涯方向需要的核心技能組合</p>
+      <div style="display:flex;flex-direction:column;gap:16px;padding-top:8px">
+        <div>
+          <div style="font-size:.85rem;font-weight:700;color:#a5b4fc;margin-bottom:6px">🤖 AI / ML 工程師路線</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span class="tag" style="background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.4);color:#d8b4fe">Python</span>
+            <span class="tag" style="background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.4);color:#d8b4fe">PyTorch/TF</span>
+            <span class="tag" style="background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.4);color:#d8b4fe">LLM/RAG</span>
+            <span class="tag" style="background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.4);color:#d8b4fe">Linux</span>
+            <span class="tag" style="background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.4);color:#d8b4fe">Git</span>
+            <span class="tag" style="background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.4);color:#d8b4fe">Docker</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:.85rem;font-weight:700;color:#6ee7b7;margin-bottom:6px">⚙️ 後端工程師路線</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span class="tag" style="background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6ee7b7">FastAPI</span>
+            <span class="tag" style="background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6ee7b7">Django</span>
+            <span class="tag" style="background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6ee7b7">PostgreSQL</span>
+            <span class="tag" style="background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6ee7b7">Redis</span>
+            <span class="tag" style="background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6ee7b7">AWS</span>
+            <span class="tag" style="background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6ee7b7">CI/CD</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:.85rem;font-weight:700;color:#fcd34d;margin-bottom:6px">📊 資料工程師路線</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span class="tag" style="background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4);color:#fcd34d">ETL/Pipeline</span>
+            <span class="tag" style="background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4);color:#fcd34d">Airflow</span>
+            <span class="tag" style="background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4);color:#fcd34d">Spark</span>
+            <span class="tag" style="background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4);color:#fcd34d">Kafka</span>
+            <span class="tag" style="background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4);color:#fcd34d">GCP/AWS</span>
+            <span class="tag" style="background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4);color:#fcd34d">SQL</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:.85rem;font-weight:700;color:#67e8f9;margin-bottom:6px">📈 數據分析師路線</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span class="tag" style="background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.4);color:#67e8f9">Pandas</span>
+            <span class="tag" style="background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.4);color:#67e8f9">Excel</span>
+            <span class="tag" style="background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.4);color:#67e8f9">SQL</span>
+            <span class="tag" style="background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.4);color:#67e8f9">Tableau</span>
+            <span class="tag" style="background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.4);color:#67e8f9">Power BI</span>
+            <span class="tag" style="background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.4);color:#67e8f9">Scikit-learn</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:.85rem;font-weight:700;color:#f9a8d4;margin-bottom:6px">🔄 DevOps / 自動化路線</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span class="tag" style="background:rgba(236,72,153,.15);border-color:rgba(236,72,153,.4);color:#f9a8d4">Linux</span>
+            <span class="tag" style="background:rgba(236,72,153,.15);border-color:rgba(236,72,153,.4);color:#f9a8d4">Shell/Bash</span>
+            <span class="tag" style="background:rgba(236,72,153,.15);border-color:rgba(236,72,153,.4);color:#f9a8d4">Docker</span>
+            <span class="tag" style="background:rgba(236,72,153,.15);border-color:rgba(236,72,153,.4);color:#f9a8d4">Kubernetes</span>
+            <span class="tag" style="background:rgba(236,72,153,.15);border-color:rgba(236,72,153,.4);color:#f9a8d4">Selenium</span>
+            <span class="tag" style="background:rgba(236,72,153,.15);border-color:rgba(236,72,153,.4);color:#f9a8d4">RPA</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+<footer><p>資料來源：104 人力銀行 Python 工程師職缺（樣本數 1,600+ 筆）　｜　此分析僅供參考，實際薪資依公司規模、經驗及談判能力而異</p></footer>
+
+<script>
+Chart.register(ChartDataLabels);
+const DEF_SCALES={x:{ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,.05)'}}};
+const DEF_LEGEND={legend:{labels:{color:'#94a3b8',font:{size:11}}}};
+
+// Region bar
+new Chart(document.getElementById('c_region'),{type:'bar',data:{labels:['北部','南部','中部'],datasets:[{label:'職缺數',data:[1117,390,93],backgroundColor:['#4f46e5cc','#f59e0bcc','#10b981cc'],borderColor:['#818cf8','#fcd34d','#6ee7b7'],borderWidth:2,borderRadius:8}]},options:{plugins:{...DEF_LEGEND,datalabels:{color:'#e2e8f0',font:{weight:'bold'},anchor:'end',align:'top'}},scales:{...DEF_SCALES,y:{...DEF_SCALES.y,beginAtZero:true}}}});
+
+// Salary overview
+new Chart(document.getElementById('c_sal_ov'),{type:'bar',data:{labels:['<3萬','3~4萬','4~5萬','5~6萬','6~8萬','8~10萬','10~15萬','>15萬'],datasets:[{label:'職缺數',data:[25,226,123,55,53,34,14,1],backgroundColor:['#ef444466','#f59e0baa','#10b981cc','#06b6d4aa','#4f46e5cc','#818cf8cc','#a78bfacc','#c4b5fdcc'],borderColor:['#f87171','#fcd34d','#6ee7b7','#67e8f9','#818cf8','#a5b4fc','#c4b5fd','#ddd6fe'],borderWidth:2,borderRadius:6}]},options:{plugins:{...DEF_LEGEND,datalabels:{color:'#e2e8f0',font:{size:10},anchor:'end',align:'top'}},scales:{...DEF_SCALES,y:{...DEF_SCALES.y,beginAtZero:true}}}});
+
+// Region donut
+new Chart(document.getElementById('c_reg_donut'),{type:'doughnut',data:{labels:['北部 69.8%','南部 24.4%','中部 5.8%'],datasets:[{data:[1117,390,93],backgroundColor:['#4f46e5','#f59e0b','#10b981'],borderColor:'#1e293b',borderWidth:3}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',padding:14}},datalabels:{color:'#fff',font:{weight:'bold',size:12},formatter:v=>v.toLocaleString()}},cutout:'60%'}});
+
+// Salary bar
+new Chart(document.getElementById('c_sal_bar'),{type:'bar',data:{labels:['<3萬','3~4萬','4~5萬','5~6萬','6~8萬','8~10萬','10~15萬','>15萬'],datasets:[{label:'職缺數',data:[25,226,123,55,53,34,14,1],backgroundColor:['#ef444466','#f59e0baa','#10b981cc','#06b6d4aa','#4f46e5cc','#818cf8cc','#a78bfacc','#c4b5fdcc'],borderColor:['#f87171','#fcd34d','#6ee7b7','#67e8f9','#818cf8','#a5b4fc','#c4b5fd','#ddd6fe'],borderWidth:2,borderRadius:6}]},options:{indexAxis:'y',plugins:{...DEF_LEGEND,datalabels:{color:'#e2e8f0',font:{size:11,weight:'bold'},anchor:'end',align:'right'}},scales:{x:{...DEF_SCALES.x,beginAtZero:true},y:{...DEF_SCALES.y}}}});
+
+// Skill vs salary
+new Chart(document.getElementById('c_sal_skill'),{type:'bar',data:{labels:['資料工程','API/雲端','機器學習/AI','資料庫/ORM','版本控制/工具','Web框架','爬蟲/自動化','資料分析','測試/品質'],datasets:[{label:'平均月薪（萬）',data:[7.23,6.71,6.50,6.15,6.09,5.92,5.55,5.40,5.06],backgroundColor:['#ef4444cc','#4f46e5cc','#a855f7cc','#06b6d4cc','#3b82f6cc','#ec4899cc','#14b8a6cc','#f59e0bcc','#6b7280cc'],borderRadius:6,borderWidth:0}]},options:{indexAxis:'y',plugins:{...DEF_LEGEND,datalabels:{color:'#e2e8f0',font:{size:10,weight:'bold'},anchor:'end',align:'right',formatter:v=>v.toFixed(1)+'萬'}},scales:{x:{...DEF_SCALES.x,beginAtZero:true,max:9},y:{...DEF_SCALES.y}}}});
+
+// Top skills
+new Chart(document.getElementById('c_top_skills'),{type:'bar',data:{labels:['Linux','Git','MS SQL','MySQL','Excel','LLM','AWS','PostgreSQL','GitHub','PyTorch','Shell','ETL','Tensorflow','Django','Docker'],datasets:[{label:'出現職缺數',data:[391,277,239,236,167,149,130,124,122,96,96,79,75,61,57],backgroundColor:['#4f46e5cc','#3b82f6cc','#06b6d4cc','#0891b2cc','#f59e0bcc','#a855f7cc','#10b981cc','#14b8a6cc','#6366f1cc','#ec4899cc','#84cc16cc','#ef4444cc','#f97316cc','#8b5cf6cc','#22d3eecc'],borderRadius:6,borderWidth:0}]},options:{indexAxis:'y',plugins:{...DEF_LEGEND,legend:{display:false},datalabels:{color:'#e2e8f0',font:{size:10},anchor:'end',align:'right'}},scales:{x:{...DEF_SCALES.x,beginAtZero:true},y:{...DEF_SCALES.y,ticks:{color:'#e2e8f0',font:{size:11}}}}}});
+
+// Radar
+new Chart(document.getElementById('c_radar'),{type:'radar',data:{labels:['版本控制/工具','資料庫/ORM','API/雲端','機器學習/AI','資料分析','資料工程','Web框架','爬蟲/自動化','測試/品質'],datasets:[{label:'職缺出現次數',data:[614,452,271,237,186,127,91,62,20],backgroundColor:'rgba(79,70,229,.25)',borderColor:'#818cf8',pointBackgroundColor:'#818cf8',pointBorderColor:'#fff',borderWidth:2}]},options:{plugins:{legend:{labels:{color:'#94a3b8'}},datalabels:{display:false}},scales:{r:{grid:{color:'rgba(255,255,255,.08)'},angleLines:{color:'rgba(255,255,255,.1)'},pointLabels:{color:'#cbd5e1',font:{size:11}},ticks:{color:'#64748b',backdropColor:'transparent'}}}}});
+
+// Co-skills
+new Chart(document.getElementById('c_cosk'),{type:'bar',data:{labels:['C++','Linux','C#','Git','C','MS SQL','JavaScript','Java','MySQL','Excel','Node.js','LLM','Github','PowerPoint','PostgreSQL','AWS','PHP','Word','HTML','PyTorch'],datasets:[{label:'出現次數',data:[409,336,315,249,238,236,232,224,216,160,117,112,112,110,106,103,100,93,84,79],backgroundColor:'#4f46e590',borderColor:'#818cf8',borderWidth:1,borderRadius:4}]},options:{indexAxis:'y',plugins:{...DEF_LEGEND,legend:{display:false},datalabels:{color:'#94a3b8',font:{size:9},anchor:'end',align:'right'}},scales:{x:{...DEF_SCALES.x,beginAtZero:true},y:{...DEF_SCALES.y,ticks:{color:'#e2e8f0',font:{size:10}}}}}});
+
+// Category donut
+new Chart(document.getElementById('c_cat'),{type:'doughnut',data:{labels:['版本控制/工具 614','資料庫/ORM 452','API/雲端 271','機器學習/AI 237','資料分析 186','資料工程 127','Web框架 91','爬蟲/自動化 62','測試/品質 20'],datasets:[{data:[614,452,271,237,186,127,91,62,20],backgroundColor:['#4f46e5','#06b6d4','#10b981','#a855f7','#f59e0b','#ef4444','#ec4899','#14b8a6','#6b7280'],borderColor:'#1e293b',borderWidth:2}]},options:{plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:10},padding:8}},datalabels:{color:'#fff',font:{weight:'bold',size:10},formatter:(v,c)=>v>100?v:''}},cutout:'45%'}});
+
+// Industry bar
+new Chart(document.getElementById('c_ind'),{type:'bar',data:{labels:['電腦軟體服務業','電腦及其週邊設備製造','電腦系統整合服務業','其它軟體及網路相關','網際網路相關業','IC設計相關業','銀行業','消費性電子製造業','其他電子零組件','證券及期貨業','工商顧問服務業','半導體製造業','電信相關業','光學器材製造業','光電產業'],datasets:[{label:'職缺數',data:[272,159,105,86,81,78,49,43,41,39,35,28,27,25,21],backgroundColor:['#818cf8cc','#67e8f9cc','#fcd34d cc','#6ee7b7cc','#fca5a5cc','#d8b4fecc','#f9a8d4cc','#5eead4cc','#fdba74cc','#a78bfacc','#86efaccc','#93c5fdcc','#fbbf24cc','#f472b6cc','#34d399cc'],borderRadius:6,borderWidth:0}]},options:{indexAxis:'y',plugins:{...DEF_LEGEND,legend:{display:false},datalabels:{color:'#e2e8f0',font:{size:10},anchor:'end',align:'right'}},scales:{x:{...DEF_SCALES.x,beginAtZero:true},y:{...DEF_SCALES.y,ticks:{color:'#e2e8f0',font:{size:10}}}}}});
+
+// Industry donut
+new Chart(document.getElementById('c_ind_donut'),{type:'doughnut',data:{labels:['電腦軟體服務業','電腦及其週邊設備製造','電腦系統整合服務業','其它軟體及網路相關','網際網路相關業','IC設計相關業','銀行業','其他'],datasets:[{data:[272,159,105,86,81,78,49,270],backgroundColor:['#4f46e5','#06b6d4','#10b981','#a855f7','#f59e0b','#ef4444','#3b82f6','#475569'],borderColor:'#1e293b',borderWidth:2}]},options:{plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:10},padding:8}},datalabels:{color:'#fff',font:{weight:'bold',size:10},formatter:v=>v>80?v:''}},cutout:'50%'}});
+
+// Bubble matrix
+new Chart(document.getElementById('c_bubble'),{type:'bubble',data:{datasets:[{label:'Linux',data:[{x:24.4,y:6.1,r:18}],backgroundColor:'#4f46e5cc'},{label:'Git',data:[{x:17.3,y:6.1,r:14}],backgroundColor:'#3b82f6cc'},{label:'MySQL/MSSQL',data:[{x:14.8,y:6.2,r:13}],backgroundColor:'#06b6d4cc'},{label:'LLM',data:[{x:9.3,y:6.5,r:11}],backgroundColor:'#a855f7cc'},{label:'AWS',data:[{x:8.1,y:6.7,r:10}],backgroundColor:'#10b981cc'},{label:'PyTorch',data:[{x:6.0,y:6.5,r:9}],backgroundColor:'#ec4899cc'},{label:'ETL',data:[{x:4.9,y:7.2,r:9}],backgroundColor:'#ef4444cc'},{label:'Docker',data:[{x:3.6,y:6.7,r:7}],backgroundColor:'#f59e0bcc'},{label:'RAG',data:[{x:2.7,y:6.8,r:6}],backgroundColor:'#8b5cf6cc'},{label:'FastAPI',data:[{x:2.1,y:5.9,r:5}],backgroundColor:'#14b8a6cc'},{label:'Kubernetes',data:[{x:1.8,y:7.0,r:5}],backgroundColor:'#f97316cc'},{label:'CI/CD',data:[{x:3.3,y:6.7,r:6}],backgroundColor:'#22d3eecc'}]},options:{plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:10}}},datalabels:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label} | 需求:${c.parsed.x}% | 薪資參考:${c.parsed.y}萬`}}},scales:{x:{title:{display:true,text:'需求頻率 (%)',color:'#94a3b8'},ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,.05)'},beginAtZero:true},y:{title:{display:true,text:'對應平均薪資 (萬)',color:'#94a3b8'},ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,.05)'},min:5,max:8}}}});
+
+// Skill table
+const skills=[
+  {s:'Linux',c:'版本控制 / 工具',n:391,p:24.4,cc:'cv'},
+  {s:'Git',c:'版本控制 / 工具',n:277,p:17.3,cc:'cv'},
+  {s:'MS SQL',c:'資料庫 / ORM',n:239,p:14.9,cc:'cd'},
+  {s:'MySQL',c:'資料庫 / ORM',n:236,p:14.7,cc:'cd'},
+  {s:'Excel',c:'資料分析',n:167,p:10.4,cc:'cda'},
+  {s:'LLM',c:'機器學習 / AI',n:149,p:9.3,cc:'cm'},
+  {s:'AWS',c:'API / 雲端',n:130,p:8.1,cc:'ca'},
+  {s:'PostgreSQL',c:'資料庫 / ORM',n:124,p:7.7,cc:'cd'},
+  {s:'GitHub',c:'版本控制 / 工具',n:122,p:7.6,cc:'cv'},
+  {s:'PyTorch',c:'機器學習 / AI',n:96,p:6.0,cc:'cm'},
+  {s:'Shell',c:'版本控制 / 工具',n:96,p:6.0,cc:'cv'},
+  {s:'ETL',c:'資料工程',n:79,p:4.9,cc:'cde'},
+  {s:'Tensorflow',c:'機器學習 / AI',n:75,p:4.7,cc:'cm'},
+  {s:'Django',c:'Web 框架',n:61,p:3.8,cc:'cw'},
+  {s:'Docker',c:'API / 雲端',n:57,p:3.6,cc:'ca'},
+  {s:'CI/CD',c:'API / 雲端',n:53,p:3.3,cc:'ca'},
+  {s:'Azure',c:'API / 雲端',n:50,p:3.1,cc:'ca'},
+  {s:'RESTful',c:'API / 雲端',n:49,p:3.1,cc:'ca'},
+  {s:'Automation',c:'爬蟲 / 自動化',n:46,p:2.9,cc:'cc2'},
+  {s:'RAG',c:'機器學習 / AI',n:43,p:2.7,cc:'cm'},
+  {s:'GCP',c:'API / 雲端',n:40,p:2.5,cc:'ca'},
+  {s:'FastAPI',c:'Web 框架',n:33,p:2.1,cc:'cw'},
+  {s:'Pipeline',c:'資料工程',n:32,p:2.0,cc:'cde'},
+  {s:'DevOps',c:'API / 雲端',n:32,p:2.0,cc:'ca'},
+  {s:'Flask',c:'Web 框架',n:30,p:1.9,cc:'cw'},
+  {s:'Kubernetes',c:'API / 雲端',n:29,p:1.8,cc:'ca'},
+  {s:'OpenCV',c:'機器學習 / AI',n:24,p:1.5,cc:'cm'},
+  {s:'Scikit-learn',c:'機器學習 / AI',n:24,p:1.5,cc:'cm'},
+  {s:'MongoDB',c:'資料庫 / ORM',n:17,p:1.1,cc:'cd'},
+  {s:'Pandas',c:'資料分析',n:16,p:1.0,cc:'cda'},
+  {s:'Hadoop',c:'資料工程',n:16,p:1.0,cc:'cde'},
+  {s:'Redis',c:'資料庫 / ORM',n:16,p:1.0,cc:'cd'},
+  {s:'K8s',c:'API / 雲端',n:16,p:1.0,cc:'ca'},
+  {s:'Spark',c:'資料工程',n:13,p:0.8,cc:'cde'},
+  {s:'Keras',c:'機器學習 / AI',n:13,p:0.8,cc:'cm'},
+  {s:'Selenium',c:'測試 / 品質',n:12,p:0.7,cc:'ct'},
+  {s:'GitLab',c:'版本控制 / 工具',n:12,p:0.7,cc:'cv'},
+  {s:'Numpy',c:'資料分析',n:11,p:0.7,cc:'cda'},
+  {s:'LangChain',c:'機器學習 / AI',n:9,p:0.6,cc:'cm'},
+  {s:'Airflow',c:'資料工程',n:7,p:0.4,cc:'cde'},
+];
+const tbody=document.getElementById('skillTbody');
+skills.forEach((s,i)=>{
+  const rc=i===0?'r1':i===1?'r2':i===2?'r3':'rn';
+  const bw=Math.round((s.n/391)*100);
+  const color=s.cc==='cv'?'#818cf8':s.cc==='cd'?'#67e8f9':s.cc==='cm'?'#d8b4fe':s.cc==='ca'?'#6ee7b7':s.cc==='cda'?'#fcd34d':s.cc==='cde'?'#fca5a5':s.cc==='cw'?'#f9a8d4':s.cc==='cc2'?'#5eead4':'#d1d5db';
+  tbody.innerHTML+=`<tr>
+    <td><span class="rb ${rc}">${i+1}</span></td>
+    <td><strong>${s.s}</strong></td>
+    <td><span class="ctag ${s.cc}">${s.c}</span></td>
+    <td style="font-weight:600;color:var(--tx)">${s.n}</td>
+    <td style="color:var(--tm)">${s.p}%</td>
+    <td style="min-width:120px"><div class="bb"><div class="bf" style="width:${bw}%;background:${color}"></div></div></td>
+  </tr>`;
+});
+
+// Smooth scroll nav active
+const sections=document.querySelectorAll('section[id]');
+const navLinks=document.querySelectorAll('nav a');
+window.addEventListener('scroll',()=>{
+  let cur='';
+  sections.forEach(s=>{if(window.scrollY>=s.offsetTop-80)cur=s.id});
+  navLinks.forEach(a=>{a.classList.toggle('active',a.getAttribute('href')==='#'+cur)});
+},{passive:true});
+</script>
+</body>
+</html>
